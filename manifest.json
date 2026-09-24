@@ -1,0 +1,62 @@
+{
+  "name": "Portfolio JL",
+  "short_name": "Portfolio JL",
+  "description": "Análisis diario de cartera: posiciones, P&L, mercado y noticias",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0F172A",
+  "theme_color": "#0F172A",
+  "categories": ["finance", "business"],
+  "screenshots": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ver briefing",
+      "short_name": "Briefing",
+      "description": "Abre el análisis de cartera actual",
+      "url": "./index.html",
+      "icons": [{"src": "./icon-192.png", "sizes": "192x192"}]
+    }
+  ],
+  "prefer_related_applications": false
+}
