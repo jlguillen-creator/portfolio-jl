@@ -2,587 +2,90 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#0F172A">
-<meta name="description" content="Portfolio JL - Análisis diario de cartera: posiciones, P&L, mercado y noticias">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Portfolio JL">
-<meta name="msapplication-TileColor" content="#0F172A">
-<meta name="msapplication-config" content="browserconfig.xml">
-
-<link rel="manifest" href="./manifest.json">
-<link rel="icon" type="image/png" href="./icon-192.png">
-<link rel="apple-touch-icon" href="./icon-192.png">
-
-<title>Portfolio JL - Briefing Diario</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio JL</title>
 <style>
 :root {
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  /* Colores: Tema Oscuro Premium */
   --bg-primary: #0F172A;
   --bg-secondary: #1E293B;
-  --bg-tertiary: #334155;
   --text-primary: #F1F5F9;
   --text-secondary: #CBD5E1;
   --text-tertiary: #94A3B8;
-  --border-color: #475569;
   --border-light: #334155;
-  
-  /* Funcionales */
-  --green-dark: #10B981;
   --green-light: #6EE7B7;
-  --green-bg: #064E3B;
-  --red-dark: #EF4444;
   --red-light: #FCA5A5;
-  --red-bg: #450A0A;
-  --amber-dark: #F59E0B;
-  --amber-light: #FCD34D;
-  --amber-bg: #451A03;
-  --blue-dark: #3B82F6;
-  --blue-light: #60A5FA;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html, body {
-  width: 100%;
-  height: 100%;
-  -webkit-font-smoothing: antialiased;
-  -webkit-tap-highlight-color: transparent;
-}
-
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; }
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.6;
-  overflow-x: hidden;
-}
-
-/* Safe area para notch */
-body {
-  padding-top: max(12px, env(safe-area-inset-top));
-  padding-bottom: max(12px, env(safe-area-inset-bottom));
-  padding-left: max(12px, env(safe-area-inset-left));
-  padding-right: max(12px, env(safe-area-inset-right));
-}
-
-.container {
-  max-width: 640px;
-  margin: 0 auto;
-  padding: 0 12px;
-}
-
-/* HEADER */
-.hdr {
-  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-  padding: 18px 0;
-  margin-bottom: 16px;
-  border-bottom: 2px solid var(--border-light);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.hdr h1 {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.5px;
-}
-
-.hdr .date {
-  font-size: 11px;
-  color: var(--text-tertiary);
-  font-weight: 500;
-}
-
-/* FLASH SUMMARY */
-.flash {
-  background: linear-gradient(135deg, #064E3B 0%, #047857 100%);
-  border: 1px solid var(--green-light);
-  border-radius: 12px;
-  padding: 14px 16px;
-  margin-bottom: 16px;
-  font-size: 13px;
-  color: var(--green-light);
-  line-height: 1.8;
-  font-weight: 500;
-}
-
-/* KPIs */
-.kpis {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.kpi {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: 10px;
-  padding: 14px;
-  text-align: center;
-}
-
-.kpi .lbl {
-  font-size: 11px;
-  color: var(--text-tertiary);
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
-}
-
-.kpi .val {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
-}
-
-.kpi .val.pos {
-  color: var(--green-light);
-}
-
-.kpi .val.neg {
-  color: var(--red-light);
-}
-
-.kpi .delta {
-  font-size: 10px;
-  margin-top: 4px;
-  color: var(--text-tertiary);
-}
-
-.kpi .delta.pos {
-  color: var(--green-light);
-}
-
-.kpi .delta.neg {
-  color: var(--red-light);
-}
-
-/* BOXES NOTICIA */
-.news-box {
-  background: linear-gradient(135deg, #1E293B, #334155);
-  border-left: 4px solid var(--amber-dark);
-  border-radius: 8px;
-  padding: 14px 16px;
-  margin-bottom: 14px;
-  font-size: 12.5px;
-  color: var(--text-secondary);
-  line-height: 1.8;
-}
-
-.news-box b {
-  color: var(--amber-light);
-  font-weight: 700;
-}
-
-/* SECCIONES */
-.sect {
-  font-size: 15px;
-  font-weight: 700;
-  margin: 20px 0 10px 0;
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--border-light);
-  color: var(--text-primary);
-  letter-spacing: -0.3px;
-}
-
-.ctx {
-  font-size: 12.5px;
-  color: var(--text-secondary);
-  line-height: 1.7;
-  margin-bottom: 10px;
-}
-
-.ctx b {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-/* POSICIONES CARDS */
-.c {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: 12px;
-  margin-bottom: 12px;
-  overflow: hidden;
-}
-
-.c.star {
-  border: 2px solid var(--green-light);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
-}
-
-.c .top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 16px 0;
-}
-
-.nm {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.nm small {
-  font-weight: 400;
-  font-size: 11px;
-  color: var(--text-tertiary);
-  display: block;
-  margin-top: 2px;
-}
-
-.sig {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 4px 12px;
-  border-radius: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.sig.buy {
-  background: var(--green-bg);
-  color: var(--green-light);
-}
-
-.sig.hold {
-  background: var(--amber-bg);
-  color: var(--amber-light);
-}
-
-.c .nums {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: 10px 16px 0;
-}
-
-.pr {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.pnl-wrap {
-  text-align: right;
-}
-
-.pnl {
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.4;
-}
-
-.pnl.pos {
-  color: var(--green-light);
-}
-
-.pnl.neg {
-  color: var(--red-light);
-}
-
-.pnl-lbl {
-  font-size: 9px;
-  color: var(--text-tertiary);
-  margin-top: 2px;
-}
-
-/* GRÁFICOS */
-.chtw {
-  position: relative;
-  width: 100%;
-  height: 90px;
-  margin: 12px 0;
-}
-
-.chtw canvas {
-  width: 100% !important;
-  height: 100% !important;
-  display: block;
-}
-
-.chtw .tag {
-  position: absolute;
-  font-size: 9px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-  pointer-events: none;
-  z-index: 10;
-}
-
-.chtw .tag.hi {
-  color: var(--green-light);
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid var(--green-light);
-}
-
-.chtw .tag.lo {
-  color: var(--red-light);
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid var(--red-light);
-}
-
-.chtw .dt {
-  position: absolute;
-  font-size: 8px;
-  color: var(--text-tertiary);
-  pointer-events: none;
-}
-
-.chtw .dt.start {
-  bottom: 2px;
-  left: 4px;
-}
-
-.chtw .dt.end {
-  bottom: 2px;
-  right: 4px;
-}
-
-/* HISTÓRICO */
-.hist-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  padding: 10px 16px;
-  border-top: 1px solid var(--border-light);
-  gap: 8px;
-}
-
-.periods {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  padding: 10px 16px 12px;
-  border-top: 1px solid var(--border-light);
-  gap: 4px;
-}
-
-.pd {
-  text-align: center;
-}
-
-.pd .lb {
-  font-size: 9px;
-  color: var(--text-tertiary);
-  margin-bottom: 3px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-.pd .vl {
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.vl.pos {
-  color: var(--green-light);
-}
-
-.vl.neg {
-  color: var(--red-light);
-}
-
-.vl.ntrl {
-  color: var(--text-secondary);
-}
-
-/* GRÁFICOS DISTRIBUCIÓN */
-.chart-container {
-  position: relative;
-  width: 100%;
-  height: 280px;
-  margin: 16px 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   padding: 12px;
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  border: 1px solid var(--border-light);
 }
+.container { max-width: 640px; margin: 0 auto; }
 
-.chart-container canvas {
-  max-width: 100%;
-}
+.hdr { background: linear-gradient(135deg, #0F172A, #1E293B); padding: 18px 0; margin-bottom: 16px; border-bottom: 2px solid var(--border-light); }
+.hdr h1 { font-size: 18px; font-weight: 700; }
+.hdr .date { font-size: 11px; color: var(--text-tertiary); }
 
-/* FOOTER */
-.disc {
-  font-size: 10px;
-  color: var(--text-tertiary);
-  text-align: center;
-  margin-top: 20px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-light);
-}
+.flash { background: linear-gradient(135deg, #064E3B, #047857); border: 1px solid var(--green-light); border-radius: 12px; padding: 14px; margin-bottom: 16px; font-size: 13px; color: var(--green-light); }
 
-/* RESPONSIVE */
-@media (max-width: 480px) {
-  .hdr { padding: 14px 0; }
-  .hdr h1 { font-size: 16px; }
-  .kpis { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .kpi { padding: 12px; }
-  .kpi .val { font-size: 16px; }
-  .periods { grid-template-columns: repeat(2, 1fr); }
-}
+.kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+.kpi { background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: 10px; padding: 14px; text-align: center; }
+.kpi .lbl { font-size: 11px; color: var(--text-tertiary); margin-bottom: 6px; }
+.kpi .val { font-size: 18px; font-weight: 700; }
+.kpi .val.pos { color: var(--green-light); }
+.kpi .val.neg { color: var(--red-light); }
 
-/* LOADING STATE */
-.loading {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--text-tertiary);
-  font-size: 14px;
-}
+.sect { font-size: 15px; font-weight: 700; margin: 20px 0 10px; padding-bottom: 8px; border-bottom: 2px solid var(--border-light); }
 
-.loading::after {
-  content: '';
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  margin-left: 8px;
-  border: 2px solid var(--text-tertiary);
-  border-top-color: var(--blue-light);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
+.c { background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: 12px; margin-bottom: 12px; padding: 14px; }
+.c .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.nm { font-size: 15px; font-weight: 700; }
+.sig { font-size: 10px; font-weight: 700; padding: 4px 12px; border-radius: 8px; background: #064E3B; color: var(--green-light); }
+.c .nums { display: flex; justify-content: space-between; align-items: baseline; }
+.pr { font-size: 20px; font-weight: 700; }
+.pnl { font-size: 12px; font-weight: 700; }
+.pnl.pos { color: var(--green-light); }
+.pnl.neg { color: var(--red-light); }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+.disc { font-size: 10px; color: var(--text-tertiary); text-align: center; margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--border-light); }
 </style>
 </head>
-
 <body>
 <div class="container">
   <div class="hdr">
     <h1>📊 Portfolio JL</h1>
-    <div class="date" id="date">Cargando...</div>
+    <div class="date">2026-09-25 09:05</div>
   </div>
 
-  <div class="flash" id="flash">⚡ Actualizando datos...</div>
+  <div class="flash">⚡ Precios actualizados — 0 posiciones activas</div>
 
-  <div class="kpis" id="kpis">
-    <div class="kpi"><div class="lbl">Valor</div><div class="val">—</div></div>
-    <div class="kpi"><div class="lbl">Invertido</div><div class="val">—</div></div>
-    <div class="kpi"><div class="lbl">P&L</div><div class="val">—</div></div>
-    <div class="kpi"><div class="lbl">Cambio</div><div class="val">—</div></div>
-  </div>
-
-  <div id="news-section"></div>
-  <div id="market-section"></div>
-  <div id="positions-section"></div>
-  <div id="charts-section"></div>
-  <div class="disc">Portfolio JL · Datos actualizados automáticamente</div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
-<script>
-// Registrar Service Worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./service-worker.js')
-    .then((reg) => console.log('✅ Service Worker registrado'))
-    .catch((err) => console.error('❌ Error SW:', err));
-}
-
-// Variables de datos (se actualizan automáticamente desde tu Sheet)
-let portfolioData = null;
-
-// Colores para gráficos (tema oscuro)
-const chartColors = {
-  textColor: '#CBD5E1',
-  gridColor: '#334155',
-  positiveColor: '#10B981',
-  negativeColor: '#EF4444',
-  accentColor: '#3B82F6'
-};
-
-// Cargar datos
-async function loadData() {
-  try {
-    // Esto debería leer desde tu Google Sheets o JSON publicado
-    // Por ahora, usamos datos de ejemplo
-    portfolioData = await fetchPortfolioData();
-    renderUI();
-  } catch (err) {
-    console.error('Error cargando datos:', err);
-    document.body.innerHTML += '<div class="loading">Error cargando datos</div>';
-  }
-}
-
-async function fetchPortfolioData() {
-  // PLACEHOLDER: Reemplaza con URL real de tu JSON o Google Sheet
-  // Ejemplo: https://tu-github.com/briefing/data.json
-  return {
-    date: new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-    flash: '📈 S&P 500 en máximos | Fed en standby | BILL en momentum',
-    kpis: { valor: '€3.886,53', invertido: '€3.752,88', pyl: '+€133,65 (+3,56%)', cambio: '-€89,47' },
-    positions: [
-      { ticker: 'BILL', name: 'Bill Holdings', price: '40,50', pyl: '+€80,41 (+13,4%)', star: true },
-      { ticker: 'MELI', name: 'Mercado Libre', price: '1.593,60', pyl: '+€5,48 (+0,9%)' },
-      { ticker: 'AMZN', name: 'Amazon', price: '223,60', pyl: '+€88,10 (+14,7%)' }
-    ]
-  };
-}
-
-function renderUI() {
-  if (!portfolioData) return;
-
-  // Header fecha
-  document.getElementById('date').textContent = portfolioData.date;
-
-  // Flash
-  document.getElementById('flash').textContent = portfolioData.flash;
-
-  // KPIs
-  const kpisHTML = `
-    <div class="kpi"><div class="lbl">Valor Cartera</div><div class="val pos">${portfolioData.kpis.valor}</div></div>
-    <div class="kpi"><div class="lbl">Invertido</div><div class="val">${portfolioData.kpis.invertido}</div></div>
-    <div class="kpi"><div class="lbl">P&L Total</div><div class="val pos">${portfolioData.kpis.pyl}</div></div>
-    <div class="kpi"><div class="lbl">Cambio Hoy</div><div class="val neg">${portfolioData.kpis.cambio}</div></div>
-  `;
-  document.getElementById('kpis').innerHTML = kpisHTML;
-
-  // Posiciones
-  const posHTML = portfolioData.positions.map(p => `
-    <div class="c ${p.star ? 'star' : ''}">
-      <div class="top">
-        <span class="nm">${p.ticker}</span>
-        <span class="sig buy">Comprar</span>
-      </div>
-      <div class="nums">
-        <span class="pr">${p.price}€</span>
-        <div class="pnl-wrap">
-          <div class="pnl pos">${p.pyl}</div>
-          <div class="pnl-lbl">P&L vs coste</div>
-        </div>
-      </div>
+  <div class="kpis">
+    <div class="kpi">
+      <div class="lbl">Valor Cartera</div>
+      <div class="val pos">€0.00</div>
     </div>
-  `).join('');
+    <div class="kpi">
+      <div class="lbl">Invertido</div>
+      <div class="val">€0.00</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">P&L Total</div>
+      <div class="val pos">€+0.00</div>
+    </div>
+    <div class="kpi">
+      <div class="lbl">Rentabilidad</div>
+      <div class="val pos">+0.00%</div>
+    </div>
+  </div>
+
+  <div class="sect">Posiciones</div>
   
-  document.getElementById('positions-section').innerHTML = `
-    <div class="sect">Posiciones</div>
-    ${posHTML}
-  `;
-}
 
-// Cargar al iniciar
-window.addEventListener('load', loadData);
-
-// Forzar actualización cada 5 minutos (cuando app está abierta)
-setInterval(loadData, 5 * 60 * 1000);
-</script>
+  <div class="disc">Portfolio JL · Backend automático — Actualizado 2026-09-25 09:05</div>
+</div>
 </body>
 </html>
