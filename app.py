@@ -56,26 +56,48 @@ def get_google_sheet_data():
 
 def get_prices(tickers):
     """Obtiene precios actuales de AlphaVantage (o fallback local)"""
+    import time
     precios = {}
+    
+    print(f"  Using API Key: {ALPHA_VANTAGE_API_KEY[:10]}..." if ALPHA_VANTAGE_API_KEY else "  NO API KEY!")
     
     for ticker in tickers:
         try:
             # AlphaVantage API
             url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={ticker}&apikey={ALPHA_VANTAGE_API_KEY}"
-            response = requests.get(url, timeout=5)
+            response = requests.get(url, timeout=10)  # Aumentado a 10 segundos
+            response.raise_for_status()
             data = response.json()
             
-            if "Global Quote" in data and "05. price" in data["Global Quote"]:
-                precio = float(data["Global Quote"]["05. price"])
-                precios[ticker] = precio
-                print(f"  {ticker}: €{precio:.2f}")
-            else:
-                print(f"  {ticker}: ERROR (API rate limit o ticker inválido)")
-                # Fallback: usar precio anterior o placeholder
+            # Debug: imprimir respuesta
+            if "Error Message" in data:
+                print(f"  {ticker}: API Error - {data['Error Message']}")
                 precios[ticker] = None
-        except Exception as e:
-            print(f"  {ticker}: ERROR ({e})")
+            elif "Note" in data:
+                print(f"  {ticker}: Rate limit - {data['Note']}")
+                precios[ticker] = None
+            elif "Global Quote" in data and "05. price" in data["Global Quote"]:
+                precio_str = data["Global Quote"]["05. price"]
+                if precio_str and precio_str != "0":
+                    precio = float(precio_str)
+                    precios[ticker] = precio
+                    print(f"  {ticker}: €{precio:.2f}")
+                else:
+                    print(f"  {ticker}: Precio vacío o cero")
+                    precios[ticker] = None
+            else:
+                print(f"  {ticker}: Respuesta incompleta - {data}")
+                precios[ticker] = None
+                
+        except requests.exceptions.Timeout:
+            print(f"  {ticker}: Timeout (>10s)")
             precios[ticker] = None
+        except Exception as e:
+            print(f"  {ticker}: ERROR ({type(e).__name__}: {e})")
+            precios[ticker] = None
+        
+        # Pequeño delay para evitar rate limit
+        time.sleep(0.2)
     
     return precios
 
