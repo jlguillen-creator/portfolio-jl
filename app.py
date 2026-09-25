@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """
-Portfolio JL Backend - Genera briefing automático cada lunes 22:45
-Lee Google Sheet → Obtiene precios → Genera HTML → Sube a GitHub
+Portfolio JL Backend v2 - YFinance + Cache
+Lee Google Sheet → Obtiene precios (YFinance) → Cachea en GitHub → Genera briefing
 """
 
 import os
 import json
-import subprocess
-from datetime import datetime
 import requests
+from datetime import datetime
 from io import StringIO
 import csv
 
@@ -16,29 +15,23 @@ import csv
 
 GITHUB_USER = "jlguillen-creator"
 GITHUB_REPO = "portfolio-jl"
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")  # GitHub Actions lo proporciona
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GOOGLE_SHEET_ID = "14BgUCgmwHbeOt1AOc3HZ_z7Ia9MstQifbGuknweKyM0"
-
-# API para precios (AlphaVantage - free tier)
-ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY", "demo")
 
 # ==================== FUNCIONES ====================
 
 def get_google_sheet_data():
     """Lee cartera del Google Sheet usando CSV export"""
     try:
-        # URL de exportación CSV del Google Sheet
         csv_url = f"https://docs.google.com/spreadsheets/d/{GOOGLE_SHEET_ID}/export?format=csv"
-        
         response = requests.get(csv_url, timeout=10)
         response.raise_for_status()
         
-        # Parsear CSV
         csv_reader = csv.reader(StringIO(response.text))
         rows = list(csv_reader)
         
         cartera = {}
-        for row in rows[1:]:  # Skip header
+        for row in rows[1:]:
             if len(row) >= 3 and row[0].strip():
                 try:
                     ticker = row[0].strip()
@@ -54,52 +47,125 @@ def get_google_sheet_data():
         print(f"❌ Error leyendo Google Sheet: {e}")
         return None
 
-def get_prices(tickers):
-    """Obtiene precios actuales de AlphaVantage (o fallback local)"""
-    import time
+def get_prices_yfinance(tickers):
+    """Obtiene precios de YFinance (sin límites)"""
+    import yfinance as yf
+    
     precios = {}
+    print(f"  Descargando precios de YFinance...")
     
-    print(f"  Using API Key: {ALPHA_VANTAGE_API_KEY[:10]}..." if ALPHA_VANTAGE_API_KEY else "  NO API KEY!")
-    
-    for ticker in tickers:
-        try:
-            # AlphaVantage API
-            url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={ticker}&apikey={ALPHA_VANTAGE_API_KEY}"
-            response = requests.get(url, timeout=10)  # Aumentado a 10 segundos
-            response.raise_for_status()
-            data = response.json()
-            
-            # Debug: imprimir respuesta
-            if "Error Message" in data:
-                print(f"  {ticker}: API Error - {data['Error Message']}")
-                precios[ticker] = None
-            elif "Note" in data:
-                print(f"  {ticker}: Rate limit - {data['Note']}")
-                precios[ticker] = None
-            elif "Global Quote" in data and "05. price" in data["Global Quote"]:
-                precio_str = data["Global Quote"]["05. price"]
-                if precio_str and precio_str != "0":
-                    precio = float(precio_str)
-                    precios[ticker] = precio
-                    print(f"  {ticker}: €{precio:.2f}")
-                else:
-                    print(f"  {ticker}: Precio vacío o cero")
-                    precios[ticker] = None
-            else:
-                print(f"  {ticker}: Respuesta incompleta - {data}")
-                precios[ticker] = None
-                
-        except requests.exceptions.Timeout:
-            print(f"  {ticker}: Timeout (>10s)")
-            precios[ticker] = None
-        except Exception as e:
-            print(f"  {ticker}: ERROR ({type(e).__name__}: {e})")
-            precios[ticker] = None
+    try:
+        # Descargar todos a la vez (más eficiente)
+        data = yf.download(tickers, period="1d", progress=False, threads=False)
         
-        # Pequeño delay para evitar rate limit
-        time.sleep(0.2)
+        if len(tickers) == 1:
+            # Si es un solo ticker, el resultado es una serie
+            precio = data['Close'].iloc[-1] if len(data) > 0 else None
+            if precio and precio > 0:
+                precios[tickers[0]] = float(precio)
+                print(f"    {tickers[0]}: €{float(precio):.2f}")
+            else:
+                print(f"    {tickers[0]}: ERROR (precio vacío)")
+        else:
+            # Si son varios, es un dataframe
+            for ticker in tickers:
+                if ticker in data.columns:
+                    precio = data[ticker]['Close'].iloc[-1] if len(data) > 0 else None
+                    if precio and precio > 0:
+                        precios[ticker] = float(precio)
+                        print(f"    {ticker}: €{float(precio):.2f}")
+                    else:
+                        print(f"    {ticker}: ERROR (precio vacío)")
+                else:
+                    print(f"    {ticker}: ERROR (ticker no encontrado)")
+    except Exception as e:
+        print(f"  ERROR descargando YFinance: {e}")
+        return None
     
-    return precios
+    return precios if precios else None
+
+def get_cached_prices():
+    """Lee precios cacheados de GitHub"""
+    try:
+        url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/main/prices.json"
+        response = requests.get(url, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"✅ Precios cacheados leídos (actualización: {data.get('updated', 'unknown')})")
+            return data.get("precios", {})
+        else:
+            print(f"⚠️  Cache no existe aún (primero run)")
+            return None
+    except Exception as e:
+        print(f"⚠️  Error leyendo cache: {e}")
+        return None
+
+def save_prices_cache(precios):
+    """Guarda precios cacheados en GitHub"""
+    if not GITHUB_TOKEN:
+        print("❌ GITHUB_TOKEN no configurado, no se puede guardar cache")
+        return False
+    
+    try:
+        import base64
+        
+        cache_data = {
+            "precios": precios,
+            "updated": datetime.now().isoformat(),
+            "day": datetime.now().strftime("%A")
+        }
+        
+        url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/prices.json"
+        headers = {
+            "Authorization": f"token {GITHUB_TOKEN}",
+            "Accept": "application/vnd.github.v3+json"
+        }
+        
+        # Obtener SHA actual
+        response = requests.get(url, headers=headers)
+        sha = response.json().get("sha") if response.status_code == 200 else None
+        
+        # Guardar
+        content_b64 = base64.b64encode(json.dumps(cache_data, indent=2).encode()).decode()
+        data = {
+            "message": f"💾 Cachear precios - {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            "content": content_b64,
+            "sha": sha
+        }
+        
+        response = requests.put(url, json=data, headers=headers)
+        if response.status_code in [200, 201]:
+            print("✅ Precios cacheados en GitHub")
+            return True
+        else:
+            print(f"❌ Error guardando cache: {response.status_code}")
+            return False
+    except Exception as e:
+        print(f"❌ Error guardando cache: {e}")
+        return False
+
+def get_prices(tickers):
+    """Obtiene precios: lunes = new, otros días = cached"""
+    hoy = datetime.now()
+    es_lunes = hoy.weekday() == 0
+    
+    print(f"📊 Obteniendo precios ({hoy.strftime('%A')})...")
+    
+    if es_lunes:
+        print("  📥 Lunes: obtener precios frescos de YFinance")
+        precios = get_prices_yfinance(tickers)
+        if precios:
+            save_prices_cache(precios)
+        return precios
+    else:
+        print("  📂 No es lunes: usar precios cacheados")
+        cached = get_cached_prices()
+        if cached:
+            return cached
+        else:
+            print("  ⚠️  Cache no existe, intentando YFinance de emergencia...")
+            return get_prices_yfinance(tickers)
 
 def calculate_portfolio(cartera, precios):
     """Calcula valor total, P&L, etc."""
@@ -110,7 +176,7 @@ def calculate_portfolio(cartera, precios):
     for ticker, data in cartera.items():
         acciones = data["acciones"]
         coste_medio = data["coste_medio"]
-        precio_actual = precios.get(ticker)
+        precio_actual = precios.get(ticker) if precios else None
         
         if precio_actual is None:
             print(f"  ⚠️ {ticker}: sin precio, skipping")
@@ -150,7 +216,6 @@ def generate_html(portfolio_data):
     """Genera HTML briefing con tema oscuro"""
     pos = portfolio_data
     
-    # Construir rows de posiciones
     pos_rows = ""
     for p in pos["posiciones"]:
         pyl_class = "pos" if p["pyl"] >= 0 else "neg"
@@ -169,7 +234,6 @@ def generate_html(portfolio_data):
         </div>
         """
     
-    # Calidad KPI
     total_class = "pos" if pos["total_pyl"] >= 0 else "neg"
     
     html = f"""<!DOCTYPE html>
@@ -259,7 +323,7 @@ body {{
   <div class="sect">Posiciones</div>
   {pos_rows}
 
-  <div class="disc">Portfolio JL · Backend automático — Actualizado {pos['fecha']}</div>
+  <div class="disc">Portfolio JL · YFinance + Caché — {pos['fecha']}</div>
 </div>
 </body>
 </html>"""
@@ -273,7 +337,7 @@ def upload_to_github(html_content):
         return False
     
     try:
-        # API GitHub para actualizar archivo
+        import base64
         url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/index.html"
         
         headers = {
@@ -281,12 +345,9 @@ def upload_to_github(html_content):
             "Accept": "application/vnd.github.v3+json"
         }
         
-        # Obtener el SHA actual del archivo (para reemplazarlo)
         response = requests.get(url, headers=headers)
         sha = response.json().get("sha") if response.status_code == 200 else None
         
-        # Preparar contenido (en base64)
-        import base64
         content_b64 = base64.b64encode(html_content.encode()).decode()
         
         data = {
@@ -302,7 +363,6 @@ def upload_to_github(html_content):
             return True
         else:
             print(f"❌ Error subiendo a GitHub: {response.status_code}")
-            print(response.text)
             return False
     except Exception as e:
         print(f"❌ Error GitHub API: {e}")
@@ -311,7 +371,7 @@ def upload_to_github(html_content):
 # ==================== MAIN ====================
 
 def main():
-    print("🤖 Portfolio JL Backend - Ejecutando...")
+    print("🤖 Portfolio JL Backend v2 - YFinance + Caché")
     print(f"📅 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     # 1. Leer cartera
@@ -320,16 +380,19 @@ def main():
         print("❌ No se pudo leer cartera. Abortando.")
         return False
     
-    # 2. Obtener precios
-    print("📊 Obteniendo precios...")
+    # 2. Obtener precios (lunes = fresh, otros = cached)
     tickers = list(cartera.keys())
     precios = get_prices(tickers)
+    
+    if not precios or len(precios) == 0:
+        print("❌ No se obtuvieron precios. Abortando.")
+        return False
     
     # 3. Calcular P&L
     print("💰 Calculando P&L...")
     portfolio = calculate_portfolio(cartera, precios)
-    print(f"  Valor total: €{portfolio['total_valor']:.2f}")
-    print(f"  P&L: €{portfolio['total_pyl']:.2f} ({portfolio['total_pyl_pct']:+.2f}%)")
+    print(f"  Valor total: €{portfolio['total_valor']:,.2f}")
+    print(f"  P&L: €{portfolio['total_pyl']:,.2f} ({portfolio['total_pyl_pct']:+.2f}%)")
     
     # 4. Generar HTML
     print("🎨 Generando HTML...")
@@ -341,9 +404,7 @@ def main():
         print("\n✅ ¡Briefing generado y publicado!")
         return True
     else:
-        print("\n❌ Error publicando. Guardando localmente...")
-        with open("index.html", "w") as f:
-            f.write(html)
+        print("\n❌ Error publicando")
         return False
 
 if __name__ == "__main__":
